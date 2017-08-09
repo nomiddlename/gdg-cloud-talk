@@ -1,0 +1,224 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+		<title>GCP Sydney Demo</title>
+
+		<link rel="stylesheet" href="css/reveal.css">
+		<link rel="stylesheet" href="css/theme/night.css">
+
+		<!-- Theme used for syntax highlighting of code -->
+		<link rel="stylesheet" href="lib/css/zenburn.css">
+
+		<style>
+		.dimmest .backgrounds {
+			-webkit-filter: opacity(10%);
+			-moz-filter: opacity(10%);
+			-o-filter: opacity(10%);
+			-ms-filter: opacity(10%);
+			filter: opacity(10%);
+		}
+
+		.dim .backgrounds {
+			-webkit-filter: opacity(30%);
+			-moz-filter: opacity(30%);
+			-o-filter: opacity(30%);
+			-ms-filter: opacity(30%);
+			filter: opacity(30%);
+		}
+
+		.reveal section img.mobile {
+			border: none;
+			background: transparent;
+		}
+
+		.reveal .hljs {
+			background: transparent;
+			font-size: 1em;
+			line-height: 1em;
+		}
+
+		</style>
+
+		<!-- Printing and PDF exports -->
+		<script>
+			var link = document.createElement( 'link' );
+			link.rel = 'stylesheet';
+			link.type = 'text/css';
+			link.href = window.location.search.match( /print-pdf/gi ) ? 'css/print/pdf.css' : 'css/print/paper.css';
+			document.getElementsByTagName( 'head' )[0].appendChild( link );
+		</script>
+	</head>
+	<body>
+		<div class="reveal">
+			<div class="slides">
+				<section data-background-image="images/shinesolutionslogo.png" data-background-position="bottom right" data-background-size="20%">
+					<h1>GCP Sydney Demo</h1>
+					<h3>GDG Cloud Melbourne<br>9 Aug 2017</h3>
+					<p>
+						Gareth Jones - <a href="https://twitter.com/nomiddlename">@nomiddlename</a>
+					</p>
+				</section>
+				<section>
+					<h2>I'm not Graham Polley</h2>
+          <p>
+            <img src="images/polley.jpg" height="208" class="fragment" style="float: left; margin-left: 200px;">
+            <img src="images/hawaii.jpg" height="208" class="fragment" style="margin-right: 200px;">
+          </p>
+          <aside class="notes">
+            This is Graham Polley, Google Developer Expert, Organiser of GDG Cloud Melbourne.
+            He's an expert in Big Data, and loves giving talks about this stuff.
+            He was supposed to be doing this demo, but instead he decided to bugger off to Hawaii
+            and give me this "marvellous opportunity" to be terrified in front of 200 people.
+          </aside>
+				</section>
+        <section>
+          <h2>The Demo</h2>
+          <p>
+            <img src="images/BigQuery.png" class="fragment">
+            <img src="images/Cloud Dataflow.png" class="fragment">
+            <img src="images/Cloud Storage.png" class="fragment">
+          </p>
+          <aside class="notes">
+            Kick off the demo. Pause. "That's it. Any questions?"
+            Just kidding. What I've just kicked off is a process that reads
+            from BigQuery, using Dataflow, and writes the results to GCS.
+            I'll explain what those things mean now.
+          </aside>
+        </section>
+        <section>
+          <h2>BigQuery</h2>
+          <ul>
+            <li class="fragment">Fully managed data warehouse</li>
+            <li class="fragment">Query TB in seconds</li>
+            <li class="fragment">Not in Australia</li>
+          </ul>
+          <aside class="notes">
+            BQ is a fast, easy way to query lots of data. It's all managed by Google,
+            and has a nice, familiar SQL interface. It's also not available in AU. Yet.
+            But that's not important for this demo.
+          </aside>
+        </section>
+        <section>
+          <h2>Data</h2>
+          <ul>
+            <li>Public Wikipedia Views</li>
+            <li>1 Billion Rows</li>
+            <li>80Gb</li>
+          </ul>
+          <aside class="notes">
+            There are bigger datasets, but 1 Billion has a nice Austin Powers ring to it.
+            Also, there's a half-decent chance the process will finish before my time's up.
+          </aside>
+        </section>
+        <section>
+          <h2>Dataflow</h2>
+          <img src="images/cow.png" width="30%" class="fragment">
+          <img src="images/mincer.png" width="30%" class="fragment">
+          <img src="images/burger.png" width="30%" class="fragment">
+          <aside class="notes">
+            Dataflow is a managed platform from Google for running data processing jobs
+            It takes your raw data (cow), allows you to slice it up and process in parallel (mincer)
+            and output your refined insights (burger). In our case, we're picking out all the
+            wikipedia page views for articles with "Melbourne" in the title.
+          </aside>
+        </section>
+
+ 					<section>
+            <h2>Some code</h2>
+						<pre><code data-trim data-noescape class="java">
+Pipeline pipeline = Pipeline.create(options);
+pipeline.apply(BigQueryIO.read().from(BIG_QUERY_TABLE))
+        .apply(ParDo.of(new DoFn<TableRow, String>() {
+            @ProcessElement
+            public void processElement(ProcessContext c) throws Exception {
+                TableRow inputRow = c.element();
+                String title = (String) inputRow.get("title");
+                if ((title).contains("elbourne"))
+                    c.output(title);
+            }
+        }))
+        .apply(TextIO.write().to(BUCKET)
+                .withoutSharding()
+                .withSuffix(".csv"));
+pipeline.run();
+</code></pre>
+ 						<aside class="notes">
+              Here's some code. It's mainly there to show you that there's not a lot of it.
+              If you're not a Java developer, then you probably don't realise that that's not
+              a lot of code.
+            </aside>
+ 					</section>
+          <section>
+            <h2>Good news</h2>
+            <p class="fragment">Dataflow is in Sydney</p>
+            <aside class="notes">
+              That makes this demo slightly less pointless.
+            </aside>
+          </section>
+          <section>
+            <h2>Cloud Storage</h2>
+            <ul>
+              <li class="fragment">Storage</li>
+              <li class="fragment">Cloud</li>
+              <li class="fragment">Australia!</li>
+            </ul>
+            <aside class="notes">
+              The output from our dataflow pipeline will be written to a GCS bucket.
+              GCS is available in Australia.
+            </aside>
+          </section>
+          <section>
+            <h2>Demo Recap</h2>
+            <p>
+              <img src="images/BigQuery.png" class="fragment">
+              <img src="images/Cloud Dataflow.png" class="fragment">
+              <img src="images/Cloud Storage.png" class="fragment">
+            </p>
+            <aside class="notes">
+              BQ - US
+              Dataflow - AU
+              GCS - AU
+            </aside>
+          </section>
+
+				<!--
+					************ That's all folks ***************
+				-->
+				<section data-background-image="images/shinesolutionslogo.png" data-background-position="bottom right" data-background-size="20%">
+					<h2>Who was that masked man?</h2>
+					<div>
+						<img src="images/lone-ranger.jpg" width="20%" style="float:left;margin-left:20%;">
+						<p>
+							Gareth Jones<br>
+              <a href="https://twitter.com/nomiddlename">@nomiddlename</a><br>
+						</p>
+					</div>
+				</section>
+			</section>
+			</div>
+		</div>
+
+		<script src="lib/js/head.min.js"></script>
+		<script src="js/reveal.js"></script>
+
+		<script>
+			// More info https://github.com/hakimel/reveal.js#configuration
+			Reveal.initialize({
+				history: true,
+				controls: false,
+				progress: false,
+
+				// More info https://github.com/hakimel/reveal.js#dependencies
+				dependencies: [
+					{ src: 'plugin/markdown/marked.js' },
+					{ src: 'plugin/markdown/markdown.js' },
+					{ src: 'plugin/notes/notes.js', async: true },
+					{ src: 'plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } }
+				]
+			});
+		</script>
+	</body>
+</html>
